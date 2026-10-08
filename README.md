@@ -1,10 +1,17 @@
-# COE Adnan - Docker Assignment
-Name: Adnan Bin Mohamed Nor
-Task: Run nginx with docker-compose
+# COE E-Commerce (Track A: Nuxt.js + Laravel)
 
-How to run:
-docker-compose up -d
-Visit http://localhost:8080
+Full-stack e-commerce — Milestone 1: Foundation.
 
-How to stop:
-docker-compose down
+## Stack
+- Frontend: Nuxt 4 (Vue 3 + TypeScript) — http://localhost:3000
+- Backend: Laravel 13 (PHP 8.4) — http://localhost:8000
+- Database: PostgreSQL 16
+- Container: Docker Compose
+
+## Quick Start
+
+```bash
+docker compose --profile core up -d
+docker compose --profile core exec backend cp .env.example .env
+docker compose --profile core exec backend php artisan key:generate
+docker compose --profile core exec backend php artisan migrate --seed

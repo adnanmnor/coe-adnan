@@ -1,0 +1,28 @@
+# Node
+node_modules/
+.nuxt/
+.output/
+dist/
+*.log
+
+# Laravel
+vendor/
+storage/*.key
+bootstrap/cache/*.php
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Sync folders
+_sync/
+_sync_back/
+src/backend_old/
+src/frontend_old/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

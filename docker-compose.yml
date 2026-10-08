@@ -1,8 +1,47 @@
-version: '3'
 services:
-  web:
-    image: nginx:alpine
-    ports:
-      - "8080:80"
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: coe
+      POSTGRES_USER: coe
+      POSTGRES_PASSWORD: secret
     volumes:
-      - ./html:/usr/share/nginx/html
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    mem_limit: 1g
+    profiles: ["core"]
+
+  backend:
+    build: ./src/backend
+    working_dir: /var/www/html
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: coe
+      DB_USERNAME: coe
+      DB_PASSWORD: secret
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    mem_limit: 1g
+    profiles: ["core"]
+
+  frontend:
+    build: ./src/frontend
+    working_dir: /app
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+      - /app/.nuxt
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    mem_limit: 1g
+    profiles: ["core"]
+
+volumes:
+  pgdata:
