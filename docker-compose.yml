@@ -11,6 +11,16 @@ services:
       - "5432:5432"
     mem_limit: 1g
     profiles: ["core"]
+    
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    mem_limit: 256m
+    profiles: ["core"]  
 
   backend:
     build: ./src/backend
@@ -22,10 +32,16 @@ services:
       DB_DATABASE: coe
       DB_USERNAME: coe
       DB_PASSWORD: secret
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
     ports:
       - "8000:8000"
     depends_on:
       - postgres
+      - redis
     mem_limit: 1g
     profiles: ["core"]
 
@@ -45,3 +61,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

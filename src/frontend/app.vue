@@ -1,10 +1,30 @@
+<script setup lang="ts">
+const { user, isLoggedIn, fetchUser, logout } = useAuth()
+const router = useRouter()
+
+onMounted(async () => {
+  if (isLoggedIn.value && !user.value) {
+    await fetchUser()
+  }
+})
+
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
+</script>
+
 <template>
   <div class="app">
     <header class="nav">
       <NuxtLink to="/" class="brand">COE E-Commerce</NuxtLink>
       <nav>
         <NuxtLink to="/products">Products</NuxtLink>
-        <NuxtLink to="/products/create">Add Product</NuxtLink>
+        <NuxtLink v-if="user?.role === 'admin'" to="/products/create">Add Product</NuxtLink>
+        <NuxtLink v-if="!isLoggedIn" to="/login">Login</NuxtLink>
+        <NuxtLink v-if="!isLoggedIn" to="/register">Register</NuxtLink>
+        <NuxtLink v-if="isLoggedIn" to="/profile">Profile</NuxtLink>
+        <a v-if="isLoggedIn" href="#" @click.prevent="handleLogout" style="color:white; margin-left:1.5rem; cursor:pointer;">Logout</a>
       </nav>
     </header>
     <main class="main">
