@@ -1,14 +1,43 @@
 <script setup lang="ts">
 const route = useRoute()
 const config = useRuntimeConfig()
-const apiBase = config.public.apiBase
+const { user, token } = useAuth()
 
 const id = route.params.id
 
-const { data, pending, error } = await useFetch(`${apiBase}/products/${id}`)
+const { data, pending, error, refresh } = await useFetch(`${config.public.apiBase}/products/${id}`)
 
 function formatPrice(v: number) {
   return '$' + Number(v).toFixed(2)
+}
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false)
+const uploadError = ref('')
+
+async function uploadImage() {
+  const file = fileInput.value?.files?.[0]
+  if (!file) return
+
+  uploading.value = true
+  uploadError.value = ''
+
+  const formData = new FormData()
+  formData.append('image', file)
+
+  try {
+    await $fetch(`${config.public.apiBase}/products/${id}/image`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token.value}` },
+      body: formData,
+    })
+    await refresh()
+  } catch (e: any) {
+    uploadError.value = e.data?.message || e.message
+  } finally {
+    uploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
 }
 </script>
 
@@ -22,6 +51,27 @@ function formatPrice(v: number) {
     <div v-else-if="data?.data">
       <h1>{{ data.data.name }}</h1>
       <p style="color:#666;">{{ data.data.description || 'No description' }}</p>
+
+      <!-- Image -->
+      <div style="margin:1rem 0;">
+        <img
+          v-if="data.data.image_url"
+          :src="data.data.image_url"
+          alt="Product image"
+          style="max-width:400px; border-radius:8px; border:1px solid #eee;"
+        />
+        <p v-else style="color:#999;">No image uploaded.</p>
+      </div>
+
+      <!-- Upload form (admin only) -->
+      <div v-if="user?.role === 'admin'" style="margin-top:1rem; padding:1rem; background:#f7f7f8; border-radius:4px;">
+        <label style="display:block; font-weight:500;">Upload Product Image (max 5MB)</label>
+        <input type="file" ref="fileInput" accept="image/*" style="margin-top:0.5rem;" />
+        <button class="btn" style="margin-top:0.5rem;" :disabled="uploading" @click="uploadImage">
+          {{ uploading ? 'Uploading...' : 'Upload' }}
+        </button>
+        <p v-if="uploadError" class="error" style="margin-top:0.5rem;">{{ uploadError }}</p>
+      </div>
 
       <div class="row" style="margin-top:1.5rem;">
         <div>

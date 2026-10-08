@@ -23,10 +23,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart', [CartController::class, 'clear']);
 });
 
+// PUBLIC — no auth
+Route::get('/products/{product}/image', [ProductController::class, 'showImage']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
+// ADMIN
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
     Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+    Route::post('/products/{product}/image', [ProductController::class, 'uploadImage']);
 });

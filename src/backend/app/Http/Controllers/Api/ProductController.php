@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -95,6 +96,50 @@ class ProductController extends Controller
         return new ProductResource($product);
     }
 
+    public function uploadImage(Request $request, Product $product): ProductResource
+    {
+        $request->validate([
+            'image' => ['required', 'file', 'image', 'max:5120'], // 5MB
+        ]);
+
+        // Delete old image if exists
+        if ($product->image_path && Storage::disk('garage')->exists($product->image_path)) {
+            Storage::disk('garage')->delete($product->image_path);
+        }
+
+        $path = $request->file('image')->storePublicly('products', 'garage');
+
+        $product->update(['image_path' => $path]);
+        $product->load('category');
+
+        return new ProductResource($product);
+    }
+    
+    public function showImage(Product $product): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\JsonResponse
+    {
+        if (! $product->image_path) {
+            return response()->json(['message' => 'No image.'], 404);
+        }
+
+        if (! Storage::disk('garage')->exists($product->image_path)) {
+            return response()->json(['message' => 'Image not found.'], 404);
+        }
+
+        $stream = Storage::disk('garage')->readStream($product->image_path);
+
+        $mime = Storage::disk('garage')->mimeType($product->image_path) ?: 'application/octet-stream';
+
+        return response()->stream(function () use ($stream) {
+            fpassthru($stream);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }, 200, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+    
     public function destroy(Product $product): JsonResponse
     {
         $product->delete();

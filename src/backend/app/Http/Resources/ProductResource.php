@@ -19,6 +19,9 @@ class ProductResource extends JsonResource
             'stock_quantity' => (int) $this->stock_quantity,
             'is_active' => (bool) $this->is_active,
             'image_path' => $this->image_path,
+            'image_url' => $this->image_path
+     ? "/api/products/{$this->id}/image"
+     : null,
             'category' => [
                 'id' => $this->category?->id,
                 'name' => $this->category?->name,

@@ -1,0 +1,22 @@
+9|4hEkQgNBX7EMQiigB9jXUKGH3gaLlz70qwIb32DGc026f7ae
+10|LdKKq4fmVgRn5cXukhqnRGdPbvwptqhxcPQc82oT9cea3bac
+13|K2ymI4vdGQDzbiljmYrnGXRiQVe2Dfp2jfbwBoAC146249da
+
+2026-10-08T05:13:07.642927Z  INFO garage_net::netapp: Connected to 127.0.0.1:3901, negotiating handshake...
+2026-10-08T05:13:07.689268Z  INFO garage_net::netapp: Connection established to e5c4f5c22c4b7fc3
+==== HEALTHY NODES ====
+ID                Hostname      Address         Tags  Zone  Capacity          DataAvail
+e5c4f5c22c4b7fc3  30e64d1c0d15  127.0.0.1:3901              NO ROLE ASSIGNED
+
+D:\projects\coe-adnan>docker compose --profile core exec garage /garage key create coe-key
+2026-10-08T05:16:10.702534Z  INFO garage_net::netapp: Connected to 127.0.0.1:3901, negotiating handshake...
+2026-10-08T05:16:10.749312Z  INFO garage_net::netapp: Connection established to e5c4f5c22c4b7fc3
+Key name: coe-key
+Key ID: GKa4ff49a692ad794f51606285
+Secret key: 54c1b41e99776b48bbf70be312640a90d107818621602f726e20fda2e01936de
+Can create buckets: false
+
+Key-specific bucket aliases:
+
+Authorized buckets:
+

@@ -22,6 +22,19 @@ services:
     mem_limit: 256m
     profiles: ["core"]  
 
+  garage:
+    image: dxflrs/garage:v1.0.1
+    volumes:
+      - garagedata:/var/lib/garage/data
+      - garagemeta:/var/lib/garage/meta
+      - ./infra/garage/garage.toml:/etc/garage.toml:ro
+    ports:
+      - "3900:3900"
+      - "3901:3901"
+      - "3902:3902"
+    mem_limit: 256m
+    profiles: ["core"]
+    
   backend:
     build: ./src/backend
     working_dir: /var/www/html
@@ -62,3 +75,5 @@ services:
 volumes:
   pgdata:
   redisdata:
+  garagedata:
+  garagemeta:
