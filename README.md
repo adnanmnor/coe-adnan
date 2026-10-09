@@ -40,6 +40,15 @@ Admin default: admin@example.com / password123
     docker compose --profile observability up -d           # + Loki, Promtail, Prometheus, Grafana
     docker compose --profile core --profile observability up -d
 
+### Fresh Clone — Setup HTTPS cert
+
+Selepas clone, generate self-signed cert untuk Nginx:
+
+    mkdir infra\nginx\certs
+    docker run --rm -v "${PWD}\infra\nginx\certs:/certs" alpine/openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /certs/server.key -out /certs/server.crt -subj "/CN=localhost"
+
+Untuk dev sahaja. Production guna cert sebenar (Let's Encrypt, dsb).
+
 ## Struktur Repo
 
     coe-adnan/
