@@ -1,79 +1,85 @@
 # COE E-Commerce (Track A: Nuxt.js + Laravel)
 
-Full-stack e-commerce order system — Milestone 1 & 2 selesai.
+Full-stack e-commerce order system — Milestone 1-4 selesai.
 
 ## Stack
 
 | Layer | Teknologi |
 |---|---|
-| Frontend | Nuxt 4 (Vue 3, TypeScript) — http://localhost:3000 |
-| Backend | Laravel 13 (PHP 8.4) — http://localhost:8000 |
+| Frontend | Nuxt 4 (Vue 3, TypeScript) — port 3000 |
+| Backend | Laravel 13 (PHP 8.4) — port 8000 |
 | Database | PostgreSQL 16 |
 | Cache / Session / Queue | Redis 7 |
 | Object Storage | Garage (S3-compatible) |
+| Reverse Proxy | Nginx (HTTPS self-signed) — port 8443 |
+| Observability | Loki + Promtail + Prometheus + Grafana |
 | Container | Docker Compose |
 
 ## Quick Start
 
-git clone git@github.com:adnanmnor/coe-adnan.git
-cd coe-adnan
-docker compose --profile core up -d
-docker compose --profile core exec backend cp .env.example .env
-docker compose --profile core exec backend php artisan key:generate
-docker compose --profile core exec backend php artisan migrate --seed --force
+    git clone git@github.com:adnanmnor/coe-adnan.git
+    cd coe-adnan
+    docker compose --profile core up -d
+    docker compose --profile core exec backend cp .env.example .env
+    docker compose --profile core exec backend php artisan key:generate
+    docker compose --profile core exec backend php artisan migrate --seed --force
 
 Akses:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000/api
-- Garage S3: http://localhost:3900
+- Frontend (HTTP): http://localhost:3000
+- Backend API (HTTP): http://localhost:8000/api
+- Full stack (HTTPS): https://localhost:8443 (self-signed, guna `-k` di curl)
+- API Docs: http://localhost:8000/docs/api
+- Grafana: http://localhost:3200 (admin/admin)
+- Prometheus: http://localhost:9090
 
 Admin default: admin@example.com / password123
 
+## Docker Profiles
+
+    docker compose --profile core up -d                    # Core (frontend, backend, db, redis, garage, nginx)
+    docker compose --profile observability up -d           # + Loki, Promtail, Prometheus, Grafana
+    docker compose --profile core --profile observability up -d
+
 ## Struktur Repo
 
-coe-adnan/
-  src/
-    frontend/           Nuxt 4
-      app.vue
-      composables/useAuth.ts
-      pages/index.vue
-      pages/login.vue
-      pages/register.vue
-      pages/profile.vue
-      pages/products/index.vue
-      pages/products/create.vue
-      pages/products/[id].vue
-      server/api/[...].ts    Proxy ke backend
-    backend/            Laravel 13
-      app/Http/Controllers/Api/AuthController.php
-      app/Http/Controllers/Api/CartController.php
-      app/Http/Controllers/Api/CategoryController.php
-      app/Http/Controllers/Api/ProductController.php
-      app/Http/Middleware/EnsureUserIsAdmin.php
-      app/Http/Resources/ProductResource.php
-      app/Http/Resources/CategoryResource.php
-      bootstrap/app.php
-      config/cors.php
-      config/filesystems.php
-      database/migrations/
-      database/seeders/
-      routes/api.php
-  infra/garage/garage.toml
-  docker-compose.yml
-  README.md
+    coe-adnan/
+      src/backend/         Laravel app
+        app/Http/Controllers/Api/   Auth, Cart, Category, Order, Product
+        app/Http/Middleware/        EnsureUserIsAdmin
+        app/Http/Resources/         API resources
+        app/Jobs/                   ProcessOrderJob
+        app/Services/               OrderService
+        app/Providers/              AppServiceProvider (metrics + rate limit)
+        config/                     cors, filesystems, prometheus, scramble
+        database/migrations/        users, categories, products, orders, order_items, payments
+        database/seeders/           Category, Product, AdminUser
+        routes/api.php
+        tests/                      Feature + Unit (41 tests)
+      src/frontend/        Nuxt app
+        composables/                useAuth, useCart
+        pages/                      login, register, profile, cart, orders, products
+        server/api/[...].ts         Proxy ke backend
+      infra/               Infrastructure configs
+        garage/garage.toml
+        nginx/nginx.conf
+        observability/              loki, promtail, prometheus, grafana
+      check.ps1            Check script (lint/test/build dengan path filtering)
+      docker-compose.yml
+      README.md
 
 ## API Endpoints
 
-Public:
+### Public
 - GET /api/health
-- GET /api/products?search=&sort=&order=&page=&per_page=&category_id=&is_active=
+- GET /api/metrics (Prometheus)
+- GET /api/products (search, filter, sort, pagination)
 - GET /api/products/{id}
-- GET /api/products/{id}/image
+- GET /api/products/{id}/image (serve dari Garage)
 - GET /api/categories
-- POST /api/auth/register
-- POST /api/auth/login
+- POST /api/auth/register (throttle 5/min)
+- POST /api/auth/login (throttle 5/min)
 
-Protected (auth:sanctum):
+### Protected (auth:sanctum, throttle 60/min)
 - GET /api/auth/me
 - PUT /api/auth/profile
 - POST /api/auth/logout
@@ -82,88 +88,94 @@ Protected (auth:sanctum):
 - PUT /api/cart/items/{productId}
 - DELETE /api/cart/items/{productId}
 - DELETE /api/cart
+- GET /api/orders
+- GET /api/orders/{order}
+- POST /api/checkout
 
-Admin only:
-- POST /api/products
-- PUT /api/products/{id}
-- DELETE /api/products/{id}
+### Admin only
+- POST/PUT/DELETE /api/products/*
 - POST /api/products/{id}/image
 - POST/PUT/DELETE /api/categories/*
+- PUT /api/orders/{order}/status
 
-## Milestone 1 Checklist
+## Milestone Checklist
 
-- [x] Monorepo — src/frontend, src/backend, infra di root
-- [x] docker compose up dari root
-- [x] CRUD produk end-to-end
-- [x] Frontend list & create produk
-- [x] Schema normalized + index + FK
+### Milestone 1 — Foundation ✅
+- [x] Monorepo (src/frontend, src/backend, infra at root)
+- [x] docker compose up works
+- [x] Product CRUD end-to-end
+- [x] Frontend list & create products
+- [x] Schema normalized + indexes + FK
 - [x] Pagination, filtering, search, sorting
 - [x] Consistent error shape
 - [x] README
 
-## Milestone 2 Checklist
+### Milestone 2 — Identity & State ✅
+- [x] Register/login/profile via JWT (Sanctum)
+- [x] Protected routes reject 401
+- [x] Admin-only endpoints reject customer 403
+- [x] Redis cart (add/remove/update, persist 7d TTL)
+- [x] Redis cache/session
+- [x] Object storage (Garage) — upload via admin, serve via Laravel proxy
 
-- [x] Register, login, update profile (JWT via Sanctum)
-- [x] Protected routes reject tanpa token (401)
-- [x] Admin-only endpoints tolak customer (403)
-- [x] Cart — add/remove/update quantity, persist di Redis
-- [x] Cache / session hits visible di Redis
-- [x] Product image upload & retrieval via object storage (Garage)
+### Milestone 3 — Async Order Flow ✅
+- [x] Checkout → order dengan unique ID + pricing snapshot
+- [x] Order creation return immediately (async)
+- [x] Queue worker proses job (Laravel Queue, Redis driver)
+- [x] Forced failure retry 3x + dead-letter (failed_jobs)
+- [x] Mock payment recorded (success + fail)
+- [x] Lifecycle: pending → paid → shipped → delivered
+- [x] Order history + detail view
+
+### Milestone 4 — Production Hardening ✅
+- [x] Check script (lint/test/build) + path filtering + pre-push hook
+- [x] Logs centralized (Loki + Promtail)
+- [x] Metrics dashboard (Grafana + Prometheus)
+- [x] Metrics endpoint /api/metrics (scrapeable)
+- [x] Test suite (41 tests, 101 assertions)
+- [x] OpenAPI spec (Scramble, /docs/api)
+- [x] Rate limiting (auth 5/min, api 60/min)
+- [x] HTTPS (Nginx reverse proxy, self-signed dev cert)
+- [x] Config from env vars (.env.example)
+- [x] Input validation + parameterized queries (Eloquent)
+
+## Development
+
+### Check script
+
+    powershell -ExecutionPolicy Bypass -File .\check.ps1               # Auto-detect changes
+    powershell -ExecutionPolicy Bypass -File .\check.ps1 -All          # Run all
+    powershell -ExecutionPolicy Bypass -File .\check.ps1 -BackendOnly
+    powershell -ExecutionPolicy Bypass -File .\check.ps1 -FrontendOnly
+
+### Pre-push hook
+
+Automatik run `check.ps1` sebelum `git push`. Skip dengan `git push --no-verify`.
+
+### Run tests
+
+    docker compose --profile core exec backend php artisan test
+
+### Generate queue worker
+
+    docker compose --profile core exec backend php artisan queue:work --tries=3 --timeout=60
 
 ## Architecture Decisions
 
-1. Frontend proxy via Nuxt server routes
-   Browser panggil /api/* (same-origin), Nuxt forward ke http://backend:8000/api/*.
-   Kelebihan: tiada CORS, tiada host.docker.internal di browser.
+1. **Frontend proxy via Nuxt server routes** — `/api/*` di-serve melalui Nuxt server route `server/api/[...].ts`, forward ke `http://backend:8000/api/*`. Kebaikan: no CORS, no host.docker.internal pada browser, service name Docker boleh kekal.
 
-2. Laravel proxy untuk image
-   Garage v1.0.1 belum support anonymous access. Laravel stream image dari
-   Garage melalui GET /api/products/{id}/image.
+2. **Laravel proxy untuk image** — Garage v1.0.1 belum support anonymous access. Laravel stream image melalui `GET /api/products/{id}/image`. Kelebihan: keselamatan + fleksibiliti (boleh tambah auth).
 
-3. Sanctum vs JWT strict
-   Sanctum memberi API token (Bearer <token>) yang berfungsi sama seperti JWT.
-   Pilihan ini default Laravel 13.
+3. **Sanctum vs JWT strict** — Sanctum default Laravel 13, API token berfungsi seperti JWT. Maintenance lebih mudah.
 
-## Environment Variables Penting
+4. **Async order processing** — `ProcessOrderJob` di-dispatch ke Redis queue, worker proses dalam background. Retry 3x dengan backoff 5 detik, failed jobs ke `failed_jobs` table.
 
-src/backend/.env:
-
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost:8000
-
-DB_CONNECTION=pgsql
-DB_HOST=postgres
-DB_PORT=5432
-DB_DATABASE=coe
-DB_USERNAME=coe
-DB_PASSWORD=secret
-
-CACHE_STORE=redis
-SESSION_DRIVER=redis
-QUEUE_CONNECTION=redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-FILESYSTEM_DISK=garage
-AWS_ACCESS_KEY_ID=<garage-key-id>
-AWS_SECRET_ACCESS_KEY=<garage-secret>
-AWS_DEFAULT_REGION=garage
-AWS_BUCKET=coe-products
-AWS_ENDPOINT=http://garage:3900
-AWS_USE_PATH_STYLE_ENDPOINT=true
-AWS_URL=http://localhost:3900/coe-products
-
-## Docker Profiles
-
-docker compose --profile core up -d                            # Core
-docker compose --profile core --profile queue up -d             # + Queue (M3)
-docker compose --profile core --profile observability up -d     # + Observability (M4)
+5. **Pricing snapshot** — OrderItem simpan `unit_price` dan `product_name` untuk elak isu bila harga produk berubah.
 
 ## Status
 
-- [x] Milestone 1 — Foundation
-- [x] Milestone 2 — Identity & State
-- [ ] Milestone 3 — Async Order Flow
-- [ ] Milestone 4 — Production Hardening
-- [ ] Milestone 5 — System Design & Scale (optional)
+- ✅ Milestone 1 — Foundation
+- ✅ Milestone 2 — Identity & State
+- ✅ Milestone 3 — Async Order Flow
+- ✅ Milestone 4 — Production Hardening
+- ⏳ Milestone 5 — System Design & Scale (optional/stretch)
