@@ -1,7 +1,9 @@
 <script setup lang="ts">
 const route = useRoute()
 const config = useRuntimeConfig()
-const { user, token } = useAuth()
+const { user, token, isLoggedIn } = useAuth()
+const { addItem } = useCart()
+const router = useRouter()
 
 const id = route.params.id
 
@@ -11,6 +13,34 @@ function formatPrice(v: number) {
   return '$' + Number(v).toFixed(2)
 }
 
+// Cart
+const quantity = ref(1)
+const adding = ref(false)
+const addedMessage = ref('')
+const cartError = ref('')
+
+async function handleAddToCart() {
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
+
+  adding.value = true
+  cartError.value = ''
+  addedMessage.value = ''
+
+  try {
+    await addItem(parseInt(id as string), quantity.value)
+    addedMessage.value = `Added ${quantity.value} item(s) to cart.`
+    setTimeout(() => { addedMessage.value = '' }, 3000)
+  } catch (e: any) {
+    cartError.value = e.data?.message || e.message
+  } finally {
+    adding.value = false
+  }
+}
+
+// Image upload (admin)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
 const uploadError = ref('')
@@ -99,6 +129,37 @@ async function uploadImage() {
           <strong>Status</strong>
           <p>{{ data.data.is_active ? 'Active' : 'Inactive' }}</p>
         </div>
+      </div>
+
+      <!-- ADD TO CART -->
+      <div style="margin-top:2rem; padding:1rem; background:#f0f4ff; border-radius:8px;">
+        <p v-if="addedMessage" style="color:#10b981; font-weight:500;">✓ {{ addedMessage }}</p>
+        <p v-if="cartError" class="error">{{ cartError }}</p>
+
+        <div style="display:flex; gap:0.5rem; align-items:flex-end;">
+          <div>
+            <label style="display:block; font-weight:500; margin-bottom:0.25rem;">Quantity</label>
+            <input
+              v-model.number="quantity"
+              type="number"
+              min="1"
+              :max="data.data.stock_quantity"
+              style="width:100px;"
+            />
+          </div>
+          <button
+            class="btn"
+            :disabled="adding || data.data.stock_quantity < 1"
+            @click="handleAddToCart"
+          >
+            {{ adding ? 'Adding...' : 'Add to Cart' }}
+          </button>
+          <NuxtLink v-if="isLoggedIn" to="/cart" class="btn" style="background:#666;">View Cart</NuxtLink>
+        </div>
+
+        <p v-if="!isLoggedIn" style="margin-top:0.5rem; color:#666; font-size:0.875rem;">
+          <NuxtLink to="/login">Login</NuxtLink> untuk tambah ke cart.
+        </p>
       </div>
 
       <p style="margin-top:1.5rem; color:#999; font-size:0.875rem;">

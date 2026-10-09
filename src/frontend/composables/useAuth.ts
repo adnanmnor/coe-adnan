@@ -1,20 +1,31 @@
 export const useAuth = () => {
-  const token = useCookie<string | null>('auth_token', {
-    maxAge: 60 * 60 * 24 * 7,
-    sameSite: 'lax',
-  })
-
   const user = useState<any | null>('auth_user', () => null)
+  const token = useState<string | null>('auth_token_state', () => null)
   const config = useRuntimeConfig()
 
   const isLoggedIn = computed(() => !!token.value)
 
+  function loadToken() {
+    if (process.client) {
+      const t = localStorage.getItem('auth_token')
+      if (t) token.value = t
+    }
+  }
+
+  function saveToken(t: string | null) {
+    token.value = t
+    if (process.client) {
+      if (t) localStorage.setItem('auth_token', t)
+      else localStorage.removeItem('auth_token')
+    }
+  }
+
   async function fetchUser() {
+    loadToken()
     if (!token.value) {
       user.value = null
       return null
     }
-
     try {
       const res = await $fetch<{ user: any }>(`${config.public.apiBase}/auth/me`, {
         headers: { Authorization: `Bearer ${token.value}` },
@@ -22,7 +33,7 @@ export const useAuth = () => {
       user.value = res.user
       return res.user
     } catch (e) {
-      token.value = null
+      saveToken(null)
       user.value = null
       return null
     }
@@ -33,7 +44,7 @@ export const useAuth = () => {
       method: 'POST',
       body: { email, password },
     })
-    token.value = res.token
+    saveToken(res.token)
     user.value = res.user
     return res
   }
@@ -43,7 +54,7 @@ export const useAuth = () => {
       method: 'POST',
       body: payload,
     })
-    token.value = res.token
+    saveToken(res.token)
     user.value = res.user
     return res
   }
@@ -56,20 +67,14 @@ export const useAuth = () => {
           headers: { Authorization: `Bearer ${token.value}` },
         })
       }
-    } catch (e) {
-      // ignore
-    }
-    token.value = null
+    } catch (e) {}
+    saveToken(null)
     user.value = null
   }
 
-  return {
-    token,
-    user,
-    isLoggedIn,
-    fetchUser,
-    login,
-    register,
-    logout,
+  if (process.client) {
+    loadToken()
   }
+
+  return { token, user, isLoggedIn, fetchUser, login, register, logout }
 }

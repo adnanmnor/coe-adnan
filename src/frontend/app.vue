@@ -1,10 +1,12 @@
 <script setup lang="ts">
 const { user, isLoggedIn, fetchUser, logout } = useAuth()
+const { count, fetchCart } = useCart()
 const router = useRouter()
 
 onMounted(async () => {
-  if (isLoggedIn.value && !user.value) {
-    await fetchUser()
+  if (isLoggedIn.value) {
+    if (!user.value) await fetchUser()
+    await fetchCart()
   }
 })
 
@@ -21,6 +23,10 @@ async function handleLogout() {
       <nav>
         <NuxtLink to="/products">Products</NuxtLink>
         <NuxtLink v-if="user?.role === 'admin'" to="/products/create">Add Product</NuxtLink>
+        <NuxtLink v-if="isLoggedIn" to="/cart">
+          Cart <span v-if="count > 0" class="badge">{{ count }}</span>
+        </NuxtLink>
+        <NuxtLink v-if="isLoggedIn" to="/orders">Orders</NuxtLink>
         <NuxtLink v-if="!isLoggedIn" to="/login">Login</NuxtLink>
         <NuxtLink v-if="!isLoggedIn" to="/register">Register</NuxtLink>
         <NuxtLink v-if="isLoggedIn" to="/profile">Profile</NuxtLink>
@@ -41,6 +47,7 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background:
 .brand { font-weight: bold; font-size: 1.2rem; color: white; text-decoration: none; }
 .nav nav a { color: white; text-decoration: none; margin-left: 1.5rem; }
 .nav nav a:hover { text-decoration: underline; }
+.badge { background: #ef4444; color: white; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; margin-left: 0.25rem; }
 .main { padding: 2rem; max-width: 1100px; margin: 0 auto; }
 .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 table { width: 100%; border-collapse: collapse; }
