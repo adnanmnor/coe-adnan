@@ -7,11 +7,23 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// Public: health & metrics
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
 
+Route::get('/metrics', \Spatie\Prometheus\Http\Controllers\PrometheusMetricsController::class)
+    ->name('prometheus.default');
+
+// Auth (public)
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 
+// Auth (protected)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
@@ -30,16 +42,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/checkout', [OrderController::class, 'checkout']);
 });
 
-// Public
+// Public: read products & categories, serve images
 Route::get('/products/{product}/image', [ProductController::class, 'showImage']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
-// Admin
+// Admin only
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
     Route::apiResource('products', ProductController::class)->except(['index', 'show']);
     Route::post('/products/{product}/image', [ProductController::class, 'uploadImage']);
-    // NEW: advance order status
     Route::put('/orders/{order}/status', [OrderController::class, 'updateStatus']);
 });
