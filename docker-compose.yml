@@ -120,6 +120,19 @@ services:
       - backend
     mem_limit: 1g
     profiles: ["core"]
+    
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
+    ports:
+      - "8443:8443"
+    depends_on:
+      - backend
+      - frontend
+    mem_limit: 64m
+    profiles: ["core"]  
 
 volumes:
   pgdata:

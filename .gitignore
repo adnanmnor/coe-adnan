@@ -26,3 +26,13 @@ src/frontend_old/
 .idea/
 .DS_Store
 Thumbs.db
+
+
+# Self-signed certs (dev only, JANGAN commit private key)
+infra/nginx/certs/*.key
+infra/nginx/certs/*.crt
+
+# Token/secrets (jangan commit)
+TOKEN.txt
+*.token
+*.secret
