@@ -188,3 +188,7 @@ Automatik run `check.ps1` sebelum `git push`. Skip dengan `git push --no-verify`
 - ✅ Milestone 3 — Async Order Flow
 - ✅ Milestone 4 — Production Hardening
 - ⏳ Milestone 5 — System Design & Scale (optional/stretch)
+
+## Architecture Decision Records
+
+- [ADR 0001: Monolith vs Microservices](docs/adr/0001-monolith-vs-microservices.md)
