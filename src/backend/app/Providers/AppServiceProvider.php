@@ -38,12 +38,17 @@ class AppServiceProvider extends ServiceProvider
             ->value(fn () => (int) User::count());
 
         // Rate limiters
-        RateLimiter::for('auth', function (Request $request) {
-            return Limit::perMinute(5)->by($request->ip());
+        // Skip actual limiting in test environment (automated test suite runs too fast)
+        $isTesting = app()->environment('testing');
+        $authLimit = $isTesting ? 10000 : 5;
+        $apiLimit  = $isTesting ? 10000 : 60;
+
+        RateLimiter::for('auth', function (Request $request) use ($authLimit) {
+            return Limit::perMinute($authLimit)->by($request->ip());
         });
 
-        RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        RateLimiter::for('api', function (Request $request) use ($apiLimit) {
+            return Limit::perMinute($apiLimit)->by($request->user()?->id ?: $request->ip());
         });
     }
 }

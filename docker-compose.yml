@@ -50,8 +50,8 @@ services:
       CACHE_STORE: redis
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     depends_on:
       - postgres
       - redis
@@ -66,8 +66,8 @@ services:
       - ./src/frontend:/app
       - /app/node_modules
       - /app/.nuxt
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     depends_on:
       - backend
     mem_limit: 1g
